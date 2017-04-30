@@ -1,0 +1,190 @@
+use Libraries.Game.Game
+use Libraries.Interface.Events.CollisionEvent2D
+use Libraries.Interface.Events.CollisionListener2D
+use Libraries.Sound.Speech
+use Libraries.Game.Graphics.Drawable
+use Libraries.Interface.Events.KeyboardEvent
+use Libraries.Game.InputMonitor
+use Libraries.Compute.Random
+use Libraries.Game.Graphics.Label
+use Libraries.Game.Graphics.Color
+
+class Main is Game, CollisionListener2D
+    Drawable banana
+    Drawable monkey
+    KeyboardEvent button
+    InputMonitor im
+    Speech talk
+    Random x
+    Random y
+    Label monkeyHp
+    Label bananaHp
+    Label gameOver
+    Label lives
+    Color color
+    boolean collision = false
+    number monkeyHP = 10
+    integer bananaHP = 10
+    integer monkeyLife = 2
+
+    action Main
+        SetScreenSize(1000,1000)  
+        StartGame()
+    end
+
+    action CreateGame
+        
+        monkey:Load("monkey-png-19.png")
+        monkey:SetPosition(150,50)
+        monkey:SetSize(200,200)
+        monkey:SetName("monkey")
+        monkey:SetCollidable(true)
+
+        banana:Load("Banana-Bunch.png")
+        banana:SetPosition(300, 300)
+        banana:SetSize(100,100)
+        banana:SetName("banana")
+        Add (banana)
+        Add (monkey)
+        banana:SetCollidable(true)
+
+        bananaHp:SetSize(36)
+        bananaHp:SetColor(color:Yellow())
+
+        monkeyHp:SetSize(36)
+        monkeyHp:SetColor(color:Black())
+
+        lives:SetPosition(500,30)
+        lives:SetSize(36)
+        lives:SetColor(color:Blue())        
+        Add (lives)
+
+        gameOver:SetText("Game Over")
+        gameOver:SetPosition(450,450)
+        gameOver:SetSize(36)
+        gameOver:SetColor(color:Orange())
+
+        AddCollisionListener(me)
+
+    end
+
+    action Update(number seconds)
+        MonkeyMove()
+
+        if im:IsKeyPressed(button:X)
+            Exit()
+        end
+        
+        if collision = true
+            MoveBanana()
+        end
+
+        monkeyHp:SetText("Monkey HP " + monkeyHP)       
+        bananaHp:SetText("Banana HP " + bananaHP)
+        lives:SetText("Monkey Lives " + monkeyLife)
+
+
+        if bananaHP = 0 or bananaHP < 0
+            banana:SetCollidable(false)
+            bananaHp:Hide()
+
+            banana:SetY(y:RandomIntegerBetween(10,950))
+            banana:SetCollidable(true)
+            bananaHP = 10
+            bananaHp:Show()
+        end
+        
+        if monkeyHP = 0 or monkeyHP < 0
+            monkeyHP = 12
+            monkey:SetPosition(x:RandomIntegerBetween(10,800),y:RandomIntegerBetween(10,800))
+            monkeyLife = monkeyLife - 1
+        end
+        
+        if monkeyLife = 0
+            talk:Say("Oh no! All the bananas are gone!")
+            banana:Hide()
+            banana:SetCollidable(false)
+
+            monkey:Hide()
+            monkey:SetCollidable(false)
+
+            monkeyHp:Hide()
+
+            bananaHp:Hide()
+ 
+            lives:Hide()
+            
+            Add(gameOver)
+                        
+        end
+    end
+
+    action BeginCollision (CollisionEvent2D event)
+        collision = true
+        
+        Add (monkeyHp)
+        Add (bananaHp)
+
+    end
+
+    action FinishCollision (CollisionEvent2D event)
+        talk:Say("Where's my banana?")
+        bananaHP = bananaHP - 2
+
+        if banana:GetScaleX() > 0
+            banana:SetScale((banana:GetScaleX() - 0.25),banana:GetScaleY()-0.25)
+        end
+        if banana:GetScaleX() < 0.25
+            bananaHP = 10
+            MoveBanana()
+            banana:SetScale(1.0)
+        end
+        monkeyHP = monkeyHP - 1
+    end
+
+    action MoveBanana
+        banana:MoveX(10)
+        if banana:GetX() > 1000
+            banana:SetX (0)
+        end
+        
+        bananaHp:SetPosition(500,800)
+    end
+
+    action MonkeyMove
+        monkeyHp:SetPosition(monkey:GetX()+ monkey:GetHeight(), monkey:GetY())
+
+        if im:IsKeyPressed(button:UP)
+            monkey:MoveY(10)
+        end
+
+        if im:IsKeyPressed(button:DOWN)
+            monkey:MoveY(-10)
+            if monkey:GetY() < 0
+                monkey:SetY(1000-monkey:GetHeight())
+            end
+        end
+        
+        if monkey:GetX() > 1000
+            monkey:SetX(0)            
+        end
+        
+        if monkey:GetY() > 1000
+            monkey:SetY(0)
+        end
+
+        if im:IsKeyPressed(button:RIGHT)
+            monkey:MoveX(10)
+            monkey:SetFlipX(false)
+        end
+
+        if im:IsKeyPressed(button:LEFT)
+            monkey:MoveX(-10)   
+            monkey:SetFlipX(true)
+            if monkey:GetX() < 0
+                monkey:SetX(1000-monkey:GetWidth())
+            end
+        end
+        
+    end
+end
